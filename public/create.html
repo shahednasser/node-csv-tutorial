@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" 
+    integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <link href="https://unpkg.com/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
+  <title>Create CSV</title>
+</head>
+<body>
+  <div class="container py-4">
+    <h1>Create CSV</h1>
+    <h2>Add Columns</h2>
+    <input type="text" name="column" id="columnName" class="form-control" placeholder="Column Name" />
+    <button class="btn btn-primary mt-1" id="addColumn">Add</button>
+    <h2 class="mt-3">Column Data</h2>
+    <button class="btn btn-primary mb-3" id="addRow">Add Row</button>
+    <div id="csvTable"></div>
+    <button class="btn btn-primary mt-3" id="submitForm">Create CSV</button>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" 
+    integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"></script>
+  <script>
+    const columnNameInput = document.getElementById('columnName');
+    const addColumnButton = document.getElementById('addColumn');
+    const addRowButton = document.getElementById('addRow');
+    const submitFormButton = document.getElementById('submitForm');
+
+    const table = new Tabulator("#csvTable", {
+      height:"300px",
+      data: [], //assign data to table
+      movableColumns: true, 
+      addRowPos: "bottom",
+    });
+
+    addColumnButton.addEventListener('click', () => {
+      const name = columnNameInput.value ? columnNameInput.value.trim() : '';
+      if (!name) {
+        alert("Please add a name");
+        return;
+      }
+
+      table.addColumn({title: name, field: name.toLowerCase(), editableTitle: true, editor: true});
+      columnNameInput.value = '';
+    });
+
+    addRowButton.addEventListener('click', () => {
+      table.addRow({});
+    });
+
+    submitFormButton.addEventListener('click', () => {
+      const data = table.getData();
+
+      fetch('/create', {
+        method: 'POST',
+        body: JSON.stringify({
+          data
+        }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then((response) => response.blob())
+      .then((blob) => {
+        const fileURL = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = fileURL
+        a.download = "file.csv"
+        a.click()
+      })
+      .catch((e) => {
+        console.error(e)
+        alert(e.message)
+      })
+    })
+  </script>
+</body>
+</html>
